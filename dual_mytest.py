@@ -14,6 +14,7 @@ Sample a goal (object will be in hand as p_obj_in_hand=1) and try to set
 the env state to the goal. I think there's a small chance this can fail
 and the object falls out.
 """
+# test git
 #    env.set_to_goal(
 #        {'state_desired_goal': env.generate_uncorrected_env_goals(1)['state_desired_goal'][0]}
 #    )
