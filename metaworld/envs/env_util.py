@@ -122,6 +122,13 @@ def quat_to_zangle(quat):
     q = quat_mul(quat_inv(quat_create(np.array([0,1.,0]), np.pi/2)), quat)
     ax,angle = mjrot.quat2axisangle(q)    
     return angle
+
+#dscho mod
+def ur3_quat_to_zangle(quat):
+    ee_init_config_quat = quat_mul(quat_create(np.array([1., 0, 0]), np.pi), quat_create(np.array([0, 0, 1.]), np.pi/2)) #ref 기준 x축 180, z축 90순
+    q = quat_mul(quat_inv(ee_init_config_quat), quat)
+    ax,angle = mjrot.quat2axisangle(q)    
+    return angle
     
 def zangle_to_quat(zangle):
     """
@@ -130,6 +137,15 @@ def zangle_to_quat(zangle):
     """
     return quat_mul(quat_create(np.array([0, 1., 0]), np.pi/2),
                     quat_create(np.array([-1., 0, 0]), zangle))
+
+def ur3_zangle_to_quat(zangle):
+    """
+    :param zangle in rad
+    :return: quaternion
+    """
+    ee_init_config_quat = quat_mul(quat_create(np.array([1., 0, 0]), np.pi), quat_create(np.array([0, 0, 1.]), np.pi/2)) #ref 기준 x축 180, z축 90순
+    return quat_mul(ee_init_config_quat,
+                    quat_create(np.array([0, 0, -1.]), zangle))
 
 def quat_create(axis, angle):
     """

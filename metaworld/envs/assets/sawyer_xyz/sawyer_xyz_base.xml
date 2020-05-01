@@ -148,7 +148,9 @@ Usage:
                                                     </body>
                                             </body> -->
                                             <body name="hand" pos="0 0 0.12" quat="-1 0 1 0">
-
+                                                <site name="hand_X" type="box" pos="0.05 0.0 0.0" size="0.05 0.002 0.002"  quat = " 1.0 0.0  0.0 0."     rgba="1 0 0 1" />
+			                                    <site name="hand_Y" type="box" pos="0.0 0.05 0.0" size="0.05 0.002 0.002"  quat = " 0.707107 0.0 0.0 0.707107"  rgba="0 1 0 1" />
+			                                    <site name="hand_Z" type="box" pos="0.0 0.0 0.05" size="0.05 0.002 0.002"  quat = "-0.707107 0.0 0.707107 0."     rgba="0 0 1 1" />
                                                 <site name="endEffector" pos="0.04 0 0" size="0.01" rgba='1 1 1 0' />
                                                 <geom name="rail" type="box" pos="-0.05 0 0" density="7850" size="0.005 0.055 0.005"  rgba="0.5 0.5 0.5 1.0" condim="3" friction="2 0.1 0.002"   />
 

@@ -6,16 +6,17 @@ import mujoco_py
 import numpy as np
 
 
+from metaworld.core.serializable import Serializable
 from metaworld.envs.mujoco.mujoco_env import MujocoEnv
-from metaworld.envs.env_util import quat_to_zangle, zangle_to_quat, quat_create, quat_mul
+from metaworld.envs.env_util import quat_to_zangle, zangle_to_quat, quat_create, quat_mul, ur3_quat_to_zangle, ur3_zangle_to_quat
 
 
 OBS_TYPE = ['plain', 'with_goal_id', 'with_goal_and_id', 'with_goal', 'with_goal_init_obs']
 
 
-class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
+class UR3MocapBase(MujocoEnv, Serializable, metaclass=abc.ABCMeta):
     """
-    Provides some commonly-shared functions for Sawyer Mujoco envs that use
+    Provides some commonly-shared functions for UR3 Mujoco envs that use
     mocap for XYZ control.
     """
     mocap_low = np.array([-0.2, 0.5, 0.06])
@@ -27,6 +28,10 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
 
     def get_endeff_pos(self):
         return self.data.get_body_xpos('hand').copy()
+
+    #dscho mod
+    def get_endeff_quat(self):
+        return self.data.get_body_xquat('hand').copy()
 
     def get_gripper_pos(self):
         return np.array([self.data.qpos[7]])
@@ -46,18 +51,11 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
         self.sim.forward()
 
     def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['model']
-        del state['sim']
-        del state['data']
-        mjb = self.model.get_mjb()
-        return {'state': state, 'mjb': mjb, 'env_state': self.get_env_state()}
+        state = super().__getstate__()
+        return {**state, 'env_state': self.get_env_state()}
 
     def __setstate__(self, state):
-        self.__dict__ = state['state']
-        self.model = mujoco_py.load_model_from_mjb(state['mjb'])
-        self.sim = mujoco_py.MjSim(self.model)
-        self.data = self.sim.data
+        super().__setstate__(state)
         self.set_env_state(state['env_state'])
 
     def reset_mocap_welds(self):
@@ -71,14 +69,18 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
         sim.forward()
 
 
-class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
+class UR3DualXYZEnv(UR3MocapBase, metaclass=abc.ABCMeta):
     def __init__(
             self,
             *args,
             hand_low=(-0.2, 0.55, 0.05),
             hand_high=(0.2, 0.75, 0.3),
+            second_hand_low=(-0.2, 0.55, 0.05),
+            second_hand_high=(0.2, 0.75, 0.3),
             mocap_low=None,
             mocap_high=None,
+            second_mocap_low=None,
+            second_mocap_high=None,
             action_scale=2./100,
             action_rot_scale=1.,
             **kwargs
@@ -88,13 +90,20 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
         self.action_rot_scale = action_rot_scale
         self.hand_low = np.array(hand_low)
         self.hand_high = np.array(hand_high)
+        self.second_hand_low = np.array(second_hand_low)
+        self.second_hand_high = np.array(second_hand_high)
         if mocap_low is None:
             mocap_low = hand_low
         if mocap_high is None:
             mocap_high = hand_high
+        if second_mocap_low is None:
+            second_mocap_low = second_hand_low
+        if second_mocap_high is None:
+            second_mocap_high = second_hand_high
         self.mocap_low = np.hstack(mocap_low)
         self.mocap_high = np.hstack(mocap_high)
-
+        self.second_mocap_low = np.hstack(second_mocap_low)
+        self.second_mocap_high = np.hstack(second_mocap_high)
         # We use continuous goal space by default and
         # can discretize the goal space by calling
         # the `discretize_goal_space` method.
@@ -113,7 +122,13 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
             self.mocap_high,
         )
         self.data.set_mocap_pos('mocap', new_mocap_pos)
-        self.data.set_mocap_quat('mocap', np.array([1, 0, 1, 0]))
+        if self.rotMode =='vertical_fixed':
+            quat = quat_mul(quat_create(np.array([1., 0, 0]), np.pi) ,quat_create(np.array([0, 0, 1.]), np.pi/2)) #ref 기준 x축 180, z축 90순
+        elif self.rotMode =='horizontal_fixed':
+            quat = quat_mul(quat_create(np.array([0, 0, 1.]), np.pi), quat_create(np.array([0, 1., 0]), np.pi/2)) #ref 기준 z축 180, y축 90순
+        
+        self.data.set_mocap_quat('mocap', quat) #w v 순인듯
+        # self.data.set_mocap_quat('mocap', np.array([1, 0, 0, 0])) #w v 순인듯
 
     def set_xyz_action_rot(self, action):
         action[:3] = np.clip(action[:3], -1, 1)
@@ -128,8 +143,9 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
         action[3] = action[3] * self.action_rot_scale
         self.data.set_mocap_pos('mocap', new_mocap_pos)
         # replace this with learned rotation
+        
         quat = quat_mul(quat_create(np.array([0, 1., 0]), np.pi),
-                        quat_create(np.array(rot_axis), action[3]))
+                        quat_create(np.array(rot_axis).astype(np.float64), action[3]))
         self.data.set_mocap_quat('mocap', quat)
         # self.data.set_mocap_quat('mocap', np.array([np.cos(action[3]/2), np.sin(action[3]/2)*rot_axis[0], np.sin(action[3]/2)*rot_axis[1], np.sin(action[3]/2)*rot_axis[2]]))
         # self.data.set_mocap_quat('mocap', np.array([1, 0, 1, 0]))
@@ -145,7 +161,7 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
         )
         self.data.set_mocap_pos('mocap', new_mocap_pos)
         zangle_delta = action[3] * self.action_rot_scale
-        new_mocap_zangle = quat_to_zangle(self.data.mocap_quat[0]) + zangle_delta
+        new_mocap_zangle = ur3_quat_to_zangle(self.data.mocap_quat[0]) + zangle_delta
 
         # new_mocap_zangle = action[3]
         new_mocap_zangle = np.clip(
@@ -155,7 +171,7 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
         )
         if new_mocap_zangle < 0:
             new_mocap_zangle += 2 * np.pi
-        self.data.set_mocap_quat('mocap', zangle_to_quat(new_mocap_zangle))
+        self.data.set_mocap_quat('mocap', ur3_zangle_to_quat(new_mocap_zangle))
 
     def set_xy_action(self, xy_action, fixed_z):
         delta_z = fixed_z - self.data.mocap_pos[0, 2]

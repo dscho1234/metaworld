@@ -293,6 +293,23 @@ def register_custom_envs():
         entry_point=create_image_48_sawyer_shelf_xy_env_v1,
     )
 
+    """
+    dscho modified
+    """
+    register(
+        id='UR3PickAndPlaceEnv-v0',
+        entry_point='metaworld.envs.mujoco.ur3_xyz.ur3_pick_and_place:UR3PickAndPlaceEnv',  
+    )
+
+    register(
+        id='UR3DualPickAndPlaceEnv-v0',
+        entry_point='metaworld.envs.mujoco.ur3_xyz.ur3_dual_pick_and_place:UR3PickAndPlaceEnv',
+        kwargs=dict(
+            hand_low=(0.0, 0.25, 0.05),
+            hand_high=(0.3, 0.55, 0.3),
+        )
+    )
+
 
 def create_image_48_sawyer_shelf_xy_env_v1(**kwargs):
     from metaworld.core.image_env import ImageEnv

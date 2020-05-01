@@ -6,13 +6,14 @@ from gym.spaces import  Dict , Box
 from metaworld.envs.env_util import get_stat_in_paths, \
     create_stats_ordered_dict, get_asset_full_path
 from metaworld.core.multitask_env import MultitaskEnv
-from metaworld.envs.mujoco.sawyer_xyz.base import SawyerXYZEnv
+from metaworld.envs.mujoco.ur3_xyz.ur3_dual_base import UR3XYZEnv
 
 
 from metaworld.envs.mujoco.utils.rotation import euler2quat
 
+from metaworld.envs.env_util import quat_to_zangle, zangle_to_quat, quat_create, quat_mul
 
-class SawyerPickAndPlaceEnv(SawyerXYZEnv):
+class UR3DualPickAndPlaceEnv(UR3XYZEnv):
     def __init__(
             self,
             obj_low=None,
@@ -21,21 +22,26 @@ class SawyerPickAndPlaceEnv(SawyerXYZEnv):
             tasks = [{'goal': np.array([0.1, 0.8, 0.2]),  'obj_init_pos':np.array([0, 0.6, 0.02]), 'obj_init_angle': 0.3}], 
             goal_low=None,
             goal_high=None,
-            hand_init_pos = (0, 0.6, 0.2),
+            hand_init_pos = (0.2, 0.4, 0.2),
             liftThresh = 0.04,
             rewMode = 'orig',
-            rotMode='rotz',#'fixed',
+            rotMode='horizontal_fixed',#'vertical_fixed',
             **kwargs
     ):
+        
+        self.quick_init(locals())
 
-        hand_low=(-0.5, 0.40, 0.05)
-        hand_high=(0.5, 1, 0.5)
-        obj_low=(-0.5, 0.40, 0.05)
-        obj_high=(0.5, 1, 0.5)
-        SawyerXYZEnv.__init__(
+        #for right arm
+        hand_low=(0.0, 0.25, 0.05)
+        hand_high=(0.3, 0.55, 0.3)
+        second_hand_low=(-0.3, 0.55, 0.3)
+        second_hand_high=(0.0, 0.25, 0.05)
+        obj_low=(-0.0, 0.25, 0.04)
+        obj_high=(0.3, 0.55, 0.06)
+        UR3XYZEnv.__init__(
             self,
             frame_skip=5,
-            action_scale=1./100,
+            action_scale=1./200,
             hand_low=hand_low,
             hand_high=hand_high,
             model_name=self.model_name,
@@ -61,23 +67,28 @@ class SawyerPickAndPlaceEnv(SawyerXYZEnv):
         self.rewMode = rewMode
         self.rotMode = rotMode
         self.hand_init_pos = np.array(hand_init_pos)
-        if rotMode == 'fixed':
+        if rotMode == 'horizontal_fixed' or rotMode=='vertical_fixed':
             self.action_space = Box(
                 np.array([-1, -1, -1, -1]),
                 np.array([1, 1, 1, 1]),
             )
         elif rotMode == 'rotz':
+            raise NotImplementedError
             self.action_rot_scale = 1./50
             self.action_space = Box(
                 np.array([-1, -1, -1, -np.pi, -1]),
                 np.array([1, 1, 1, np.pi, 1]),
             )
         elif rotMode == 'quat':
+            raise NotImplementedError
+            self.action_rot_scale = 1./10 #dscho mod
             self.action_space = Box(
                 np.array([-1, -1, -1, 0, -1, -1, -1, -1]),
                 np.array([1, 1, 1, 2*np.pi, 1, 1, 1, 1]),
             )
         else:
+            raise NotImplementedError
+            self.action_rot_scale = 1./10 #dscho mod
             self.action_space = Box(
                 np.array([-1, -1, -1, -np.pi/2, -np.pi/2, 0, -1]),
                 np.array([1, 1, 1, np.pi/2, np.pi/2, np.pi*2, 1]),
@@ -105,9 +116,7 @@ class SawyerPickAndPlaceEnv(SawyerXYZEnv):
 
     @property
     def model_name(self):     
-
-        return get_asset_full_path('sawyer_xyz/sawyer_pick_and_place.xml')
-        #return get_asset_full_path('sawyer_xyz/pickPlace_fox.xml')
+        return get_asset_full_path('ur3_xyz/ur3_dual_pick_and_place.xml')
 
     def viewer_setup(self):
         # top view
@@ -134,18 +143,20 @@ class SawyerPickAndPlaceEnv(SawyerXYZEnv):
 
     def step(self, action):
         # self.set_xyz_action_rot(action[:7])
-        if self.rotMode == 'euler':
+        if self.rotMode == 'euler': #ee pos xyz control + xyz rotation by euler
             action_ = np.zeros(7)
             action_[:3] = action[:3]
             action_[3:] = euler2quat(action[3:6])
             self.set_xyz_action_rot(action_)
-        elif self.rotMode == 'fixed':
-            self.set_xyz_action(action[:3])
+        elif self.rotMode == 'horizontal_fixed' or self.rotMode == 'vertical_fixed':
+            self.set_xyz_action(action[:3]) #ee pos xyz control
         elif self.rotMode == 'rotz':
-            self.set_xyz_action_rotz(action[:4])
+            self.set_xyz_action_rotz(action[:4]) #ee pos xyz control + z rotation
         else:
-            self.set_xyz_action_rot(action[:7])
-        self.do_simulation([action[-1], -action[-1]])
+            self.set_xyz_action_rot(action[:7]) #ee pos xyz control + xyz rotation by quat? 불확실
+        # self.do_simulation([action[-1], -action[-1]]) #gripper 여닫는거인듯
+        self.do_simulation([action[-1], action[-1]]) #gripper 여닫는거인듯
+        
         # The marker seems to get reset every time you do a simulation
         self._set_goal_marker(self._state_goal)
         ob = self._get_obs()
@@ -153,7 +164,11 @@ class SawyerPickAndPlaceEnv(SawyerXYZEnv):
         reward , reachRew, reachDist, pickRew, placeRew , placingDist = self.compute_reward(action, obs_dict, mode = self.rewMode)
         self.curr_path_length +=1
         #info = self._get_info()
-        return ob, reward, False, { 'reachRew':reachRew, 'reachDist': reachDist, 'pickRew':pickRew, 'placeRew': placeRew, 'epRew' : reward, 'placingDist': placingDist}
+        if self.curr_path_length == self.max_path_length:
+            done = True
+        else:
+            done = False
+        return ob, reward, done, { 'reachRew':reachRew, 'reachDist': reachDist, 'pickRew':pickRew, 'placeRew': placeRew, 'epRew' : reward, 'placingDist': placingDist}
    
     def _get_obs(self):
         hand = self.get_endeff_pos()
@@ -196,15 +211,21 @@ class SawyerPickAndPlaceEnv(SawyerXYZEnv):
             objPos
         )
     
-
-
+    #dscho modified
+    def set_joint_state(self, joint_angles):
+        qpos = self.data.qpos.flat.copy()
+        qvel = self.data.qvel.flat.copy()
+        qpos[0:6] = joint_angles.copy()
+        qvel[14:20] = 0 
+        self.set_state(qpos, qvel)
 
 
     def _set_obj_xyz(self, pos):
+        #dscho modified 
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
-        qpos[9:12] = pos.copy()
-        qvel[9:15] = 0
+        qpos[14:17] = pos.copy() #0 ~ 5 ur3, 6~9 grip_r, 10~13 grip_l, 14~16 object pos, 17~20 object quat
+        qvel[14:20] = 0 #0~5 ur3, 6~9 grip_r, 10~13 grip_l, 14~19 object vel, angvel
         self.set_state(qpos, qvel)
 
 
@@ -247,14 +268,14 @@ class SawyerPickAndPlaceEnv(SawyerXYZEnv):
                 self.hand_and_obj_space.high,
                 size=(self.hand_and_obj_space.low.size),
             )
-            while np.linalg.norm(goal_pos[:2] - goal_pos[-2:]) < 0.1:
+            while np.linalg.norm(goal_pos[:3] - goal_pos[-3:]) < 0.1:
                 goal_pos = np.random.uniform(
                     self.hand_and_obj_space.low,
                     self.hand_and_obj_space.high,
                     size=(self.hand_and_obj_space.low.size),
                 )
             self._state_goal = goal_pos[:3]
-            self.obj_init_pos = np.concatenate((goal_pos[-2:], self.obj_init_pos[-1]))
+            self.obj_init_pos = np.concatenate((goal_pos[-3:-1], np.array([self.obj_init_pos[-1]])))
         self._set_goal_marker(self._state_goal)
         self._set_obj_xyz(self.obj_init_pos)
         #self._set_obj_xyz_quat(self.obj_init_pos, self.obj_init_angle)
@@ -264,11 +285,23 @@ class SawyerPickAndPlaceEnv(SawyerXYZEnv):
         return self._get_obs()
 
     def _reset_hand(self):
-        for _ in range(10):
+        #10번씩 하는건 gripper 닫는 시간때문
+        for _ in range(10): 
             self.data.set_mocap_pos('mocap', self.hand_init_pos)
-            self.data.set_mocap_quat('mocap', np.array([1, 0, 1, 0]))
-            self.do_simulation([-1,1], self.frame_skip)
-            #self.do_simulation(None, self.frame_skip)
+            # self.data.set_mocap_quat('mocap', np.array([1, 0, 1, 0])) #w v 순인듯
+            # self.data.set_mocap_quat('mocap', np.array([1, 0, 0, 0])) #w v 순인듯
+            if self.rotMode=='vertical_fixed':
+                quat = quat_mul(quat_create(np.array([1., 0, 0]), np.pi) ,quat_create(np.array([0, 0, 1.]), np.pi/2)) #ref 기준 x축 180, z축 90순
+            elif self.rotMode=='horizontal_fixed':
+                quat = quat_mul(quat_create(np.array([0, 0, 1.]), np.pi) ,quat_create(np.array([0, 1., 0]), np.pi/2)) #ref 기준 z축 180, y축 90순
+            else: #그 외 경우도 vertically initialize
+                quat = quat_mul(quat_create(np.array([1., 0, 0]), np.pi) ,quat_create(np.array([0, 0, 1.]), np.pi/2)) #ref 기준 x축 180, z축 90순
+            
+            self.data.set_mocap_quat('mocap', quat)
+            
+            # self.do_simulation([-1,1], self.frame_skip)
+            self.do_simulation([0,0], self.frame_skip)
+            
         rightFinger, leftFinger = self.get_site_pos('rightEndEffector'), self.get_site_pos('leftEndEffector')
         self.init_fingerCOM  =  (rightFinger + leftFinger)/2
         self.pickCompleted = False
