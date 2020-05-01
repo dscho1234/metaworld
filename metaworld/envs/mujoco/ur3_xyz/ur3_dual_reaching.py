@@ -24,7 +24,7 @@ class UR3Reaching(UR3XYZEnv):
             rotMode='horizontal_fixed',#'vertical_fixed',
             **kwargs
     ):
-        
+        raise NotImplementedError('코드 짜다 말았음!')
         self.quick_init(locals())
                
         #for right arm
