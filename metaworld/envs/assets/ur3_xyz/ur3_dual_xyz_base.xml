@@ -13,7 +13,7 @@ Usage:
 </mujoco>
 -->
 
-<mujoco model="sawyer">
+<mujoco model="ur3"> <!--was sawyer-->
     <camera pos="0 0 3.2" name="topview" /> <!--0 0 3.2-->
 
     <!--<geom name="floor" type="plane" pos="0 0 -.9" size="10 10 10"-->
@@ -49,10 +49,10 @@ Usage:
             <geom pos="0.26 0.345 -0.91488" quat="0.5 0.5 -0.5 -0.5" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.2 0.2 0.2 1" mesh="pedestal" />
             <geom size="0.18 0.31" pos="-0.02 0 -0.29" type="cylinder" rgba="0.2 0.2 0.2 0" />
         </body-->
-        <body name="base_link" pos="0 0 0" euler ="0 0 1.570796"> <!--no angle--> <!--euler ="0 0 1.570796"-->
+        <body name="base_link" pos="0 0 0" euler ="0 0 1.570796"> <!--euler ="0 0 1.570796"-->
             <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="2" diaginertia="0.005625 0.00305317 0.00305317" />
             <geom type="mesh" pos = "0 0 -0.005" rgba="0.7 0.7 0.7 1" mesh="ur_base" material="robot0:base_mat" />
-            <body name="shoulder_link" pos="0 0 0.1519">
+            <body name="shoulder_link" pos="0 0 0.1519"> <!--no angle--> 
                 <inertial pos="0 0 0" mass="2" diaginertia="0.00809316 0.00809316 0.005625" />
                 <joint name="shoulder_pan_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" damping="10"/>
                 <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="shoulder" material="robot0:head_mat" />
@@ -60,7 +60,7 @@ Usage:
                     <inertial pos="0 0 0.121825" mass="3.42" diaginertia="0.0217285 0.0217285 0.00961875" />
                     <joint name="shoulder_lift_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-6.28319 6.28319" damping="10"/>
                     <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="upperarm" material="robot0:head_mat" />
-                    <body name="forearm_link" pos="0 -0.0925 0.24365"> <!--no angle--><!-- euler="0 1.570796 0"-->
+                    <body name="forearm_link" pos="0 -0.0925 0.24365"  > <!--no angle-->
                         <inertial pos="0 0 0.106625" mass="1.26" diaginertia="0.00654681 0.00654681 0.00354375" />
                         <joint name="elbow_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-3.14159 3.14159" damping="10"/>
                         <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="forearm" material="robot0:arm_mat"/>
@@ -68,11 +68,11 @@ Usage:
                             <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.8" diaginertia="0.00225 0.002085 0.002085" />
                             <joint name="wrist_1_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-6.28319 6.28319" damping="10"/>
                             <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="wrist1" material="RobMat"/>
-                            <body name="wrist_2_link" pos="0 0.08505 0"> <!--no angle--> <!-- euler ="0 0 -1.570796"-->
+                            <body name="wrist_2_link" pos="0 0.08505 0" > <!--no angle--> 
                                 <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.8" diaginertia="0.00225 0.002085 0.002085" />
                                 <joint name="wrist_2_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" damping="10"/>
                                 <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="wrist2" material="RobMat" />
-                                <body name="wrist_3_link" pos="0 0 0.08535">
+                                <body name="wrist_3_link" pos="0 0 0.08535" euler="0 0 0">
                                     <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.35" diaginertia="0.000984375 0.000912187 0.000912187" />
                                     <joint name="wrist_3_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-6.28319 6.28319" damping="10"/>
                                     <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="wrist3" material="RobMat"/>
@@ -189,7 +189,7 @@ Usage:
     </body>
 
     <!--Second robot arm-->
-    <body name="second_base" pos="-0.2 0.2 0.5" quat ="0.27059804 -0.6532815 0.65328147 -0.27059805"><!--euler = "0 2.356194 0" only y회전(옛날버전)-->
+    <body name="second_base" pos="-0.2 0.2 0.5"  euler = "2.356194 0 -1.570796"><!--euler = "0 2.356194 0" only y회전(옛날버전)--> <!--quat ="0.27059804 -0.6532815 0.65328147 -0.27059805"-->
         <site name="second_base_X" type="box" pos="0.05 0.0 0.0" size="0.1 0.002 0.002"  quat = " 1.0 0.0  0.0 0."     rgba="1 0 0 1" />
 	    <site name="second_base_Y" type="box" pos="0.0 0.05 0.0" size="0.1 0.002 0.002"  quat = " 0.707107 0.0 0.0 0.707107"  rgba="0 1 0 1" />
     	<site name="second_base_Z" type="box" pos="0.0 0.0 0.05" size="0.1 0.002 0.002"  quat = "-0.707107 0.0 0.707107 0."     rgba="0 0 1 1" />
@@ -228,7 +228,7 @@ Usage:
                     <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="upperarm" material="robot0:head_mat" />
                     <body name="second_forearm_link" pos="0 -0.0925 0.24365"> <!--no angle--><!-- euler="0 1.570796 0"-->
                         <inertial pos="0 0 0.106625" mass="1.26" diaginertia="0.00654681 0.00654681 0.00354375" />
-                        <joint name="second_elbow_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-3.14159 3.14159" damping="10"/>
+                        <joint name="second_elbow_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-6.28319 6.28319" damping="10"/> <!--range="-3.14159 3.14159"-->
                         <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="forearm" material="robot0:arm_mat"/>
                         <body name="second_wrist_1_link" pos="0 0 0.21325" quat="0.707107 0 0.707107 0" ><!--quat="0.707107 0 0.707107 0"-->
                             <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.8" diaginertia="0.00225 0.002085 0.002085" />
@@ -250,9 +250,9 @@ Usage:
                                         <site name="second_EndEffector_visualize" type="box" pos="0 0 0.12" size="0.002 0.002 0.002"  quat = " 1.0 0.0  0.0 0."  />
                                         
                                         <body name="second_hand" pos="0.0 0.0 0.12"> <!--name was ee_link--> <!--euler = "-1.570796 0 0"-->
-                                            <site name="qcX" type="box" pos="0.05 0.0 0.0" size="0.05 0.002 0.002"  quat = " 1.0 0.0  0.0 0."     rgba="1 0 0 1" />
-			                                <site name="qcY" type="box" pos="0.0 0.05 0.0" size="0.05 0.002 0.002"  quat = " 0.707107 0.0 0.0 0.707107"  rgba="0 1 0 1" />
-			                                <site name="qcZ" type="box" pos="0.0 0.0 0.05" size="0.05 0.002 0.002"  quat = "-0.707107 0.0 0.707107 0."     rgba="0 0 1 1" />
+                                            <site name="second_qcX" type="box" pos="0.05 0.0 0.0" size="0.05 0.002 0.002"  quat = " 1.0 0.0  0.0 0."     rgba="1 0 0 1" />
+			                                <site name="second_qcY" type="box" pos="0.0 0.05 0.0" size="0.05 0.002 0.002"  quat = " 0.707107 0.0 0.0 0.707107"  rgba="0 1 0 1" />
+			                                <site name="second_qcZ" type="box" pos="0.0 0.0 0.05" size="0.05 0.002 0.002"  quat = "-0.707107 0.0 0.707107 0."     rgba="0 0 1 1" />
                                         </body>
                                         <!--camera name="gripper_camera" euler="0 3.14159265 0" fovy="63.5" /-->
                                         <geom name="second_light_1" type="sphere" size="0.005" pos="0.035 0 0.0166" material="Light" />

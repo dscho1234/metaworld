@@ -6,7 +6,7 @@ import mujoco_py
 import numpy as np
 
 
-from metaworld.core.serializable import Serializable
+
 from metaworld.envs.mujoco.mujoco_env import MujocoEnv
 from metaworld.envs.env_util import quat_to_zangle, zangle_to_quat, quat_create, quat_mul, ur3_quat_to_zangle, ur3_zangle_to_quat
 
@@ -14,7 +14,7 @@ from metaworld.envs.env_util import quat_to_zangle, zangle_to_quat, quat_create,
 OBS_TYPE = ['plain', 'with_goal_id', 'with_goal_and_id', 'with_goal', 'with_goal_init_obs']
 
 
-class UR3MocapBase(MujocoEnv, Serializable, metaclass=abc.ABCMeta):
+class UR3MocapBase(MujocoEnv, metaclass=abc.ABCMeta):
     """
     Provides some commonly-shared functions for UR3 Mujoco envs that use
     mocap for XYZ control.

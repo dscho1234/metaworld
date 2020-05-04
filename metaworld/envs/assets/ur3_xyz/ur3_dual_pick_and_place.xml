@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mujoco>
-    <include file="ur3_shared_config.xml"></include>
+    <include file="ur3_dual_shared_config.xml"></include>
     <worldbody>
         <include file="ur3_dual_xyz_base.xml"></include>
         <body name="obj" pos="0 0.6 0.02">
@@ -58,5 +58,8 @@
         
         <position name="close_r" joint="joint7_1" ctrllimited="true" ctrlrange="-1 1" kp="3"/>
         <position name="close_l" joint="joint7_2" ctrllimited="true" ctrlrange="-1 1" kp="3"/>
+
+        <position name="second_close_r" joint="second_joint7_1" ctrllimited="true" ctrlrange="-1 1" kp="3"/>
+        <position name="second_close_l" joint="second_joint7_2" ctrllimited="true" ctrlrange="-1 1" kp="3"/>
     </actuator>
 </mujoco>

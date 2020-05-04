@@ -24,7 +24,7 @@ def sample_pick_and_place():
     tasks = [{'goal': np.array([0.1, 0.4, 0.2]),  'obj_init_pos':np.array([0, 0.5, 0.02]), 'obj_init_angle': 0.3}] 
     hand_init_pos = (0, 0.6, 0.2)
     # hand_init_pos = (-0.314, 0.656, 0.066)
-    env = UR3PickAndPlaceEnv(random_init=True, tasks = tasks, rotMode='rotz', hand_init_pos=hand_init_pos)
+    env = UR3PickAndPlaceEnv(random_init=True, tasks = tasks, rotMode='fixed', hand_init_pos=hand_init_pos)
     # env = SawyerPickAndPlaceEnv(tasks = tasks, rotMode='rotz', hand_init_pos=hand_init_pos)
     # env.render()
     # print(env.get_endeff_pos())
@@ -51,20 +51,32 @@ def sample_pick_and_place():
         env.reset()
         
         # print(env.get_endeff_quat())
-        for _ in range(50):
-            # print(env.data.qpos[:7])
-            # print('mocap quat is ', env.data.mocap_quat)
-            # print('endeff pos : {}'.format(env.get_endeff_pos()))
-            env.render()
-            action = env.action_space.sample()
-            # action[-1] = -1
-            # action = np.zeros(Da)
-            #*np.random.normal(size = 1)
-            # action[0]=-1
-            action[-1] = 1
-            obs, _, _ , _ = env.step(action)
-            # print(obs)
-            # time.sleep(0.05)
-        # glfw.destroy_window(env.viewer.window)
+        for k in range(4):
+            for _ in range(30):
+                # print(env.data.qpos[:7])
+                # print('mocap quat is ', env.data.mocap_quat)
+                # print('endeff pos : {}'.format(env.get_endeff_pos()))
+                env.render()
+                # action = env.action_space.sample()
+                # action[-1] = -1
+                # action = np.zeros(Da)
+                #*np.random.normal(size = 1)
+                # action[0]=-1
+                # action[-1] = 1
+                dim = env.action_space.shape[0]
+                action = np.zeros(dim)
+                if k ==0 :
+                    action[1]=-0.5
+                elif k ==1 :
+                    action[0]=0.5
+                elif k ==2 :
+                    action[1]=0.5
+                elif k ==3 :
+                    action[0]=-0.5
+                
+                obs, _, _ , _ = env.step(action)
+                # print(obs)
+                # time.sleep(0.05)
+            # glfw.destroy_window(env.viewer.window)
 
 sample_pick_and_place()
